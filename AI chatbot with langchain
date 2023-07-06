@@ -1,0 +1,72 @@
+import openai
+import langchain
+import numpy as np
+
+
+langchain_url = "http://localhost:8080"
+langchain_vector_database = "wikipedia_vectors"
+
+
+openai_api_key = "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"
+
+
+embeddings_path = "path/to/embeddings.txt"
+embeddings = np.loadtxt(embeddings_path)
+
+
+lc_client = langchain.Client(langchain_url)
+
+
+lc_client.create_or_connect_vector_database(langchain_vector_database)
+
+
+for i, embedding in enumerate(embeddings):
+    lc_client.add_vector(langchain_vector_database, i, embedding)
+
+
+openai.api_key = openai_api_key
+
+
+
+def get_most_similar_article(query):
+    query_embedding = compute_embedding(query)
+    most_similar_index = lc_client.find_most_similar_vector(langchain_vector_database, query_embedding)
+    most_similar_title = article_titles[most_similar_index]
+    return most_similar_title
+
+
+
+def compute_embedding(text):
+
+
+# Implement your own embedding computation logic here
+
+
+
+def generate_response(question):
+    response = openai.Completion.create(
+        model="text-davinci-003",  # GPT-3.5 model
+        prompt=question,
+        max_tokens=100,
+        temperature=0.7,
+        n=1,
+        stop=None,
+        timeout=10
+    )
+    return response.choices[0].text.strip()
+
+
+
+while True:
+    user_input = input("User: ")
+    if user_input.lower() == "exit":
+        print("Chatbot: Goodbye!")
+        break
+
+    article_title = get_most_similar_article(user_input)
+    try:
+        response = generate_response(user_input)
+    except Exception as e:
+        response = "Oops! Something went wrong."
+
+    print("Chatbot:", response)
